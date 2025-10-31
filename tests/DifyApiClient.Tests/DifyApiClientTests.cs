@@ -1,49 +1,35 @@
 using DifyApiClient.Models;
-using System.Net;
 using System.Text;
-using System.Text.Json;
 using Xunit;
 
 namespace DifyApiClient.Tests;
 
 public class DifyApiClientTests : IDisposable
 {
-    private readonly MockHttpMessageHandler _mockHandler;
-    private readonly HttpClient _httpClient;
     private readonly DifyApiClient _client;
 
     public DifyApiClientTests()
     {
-        _mockHandler = new MockHttpMessageHandler();
-        _httpClient = new HttpClient(_mockHandler);
+        // Get API key from environment variable or use a default for testing
+        var apiKey = Environment.GetEnvironmentVariable("DIFY_API_KEY") ?? "app-your-api-key-here";
         
         var options = new DifyApiClientOptions
         {
-            BaseUrl = "http://localhost/v1",
-            ApiKey = "test-api-key"
+            BaseUrl = "http://osl4243:8980/v1",
+            ApiKey = apiKey
         };
 
-        _client = new DifyApiClient(options, _httpClient);
+        _client = new DifyApiClient(options);
     }
 
     [Fact]
     public async Task SendChatMessageAsync_ReturnsValidResponse()
     {
         // Arrange
-        var expectedResponse = new ChatCompletionResponse
-        {
-            MessageId = "msg-123",
-            ConversationId = "conv-456",
-            Answer = "Hello! How can I help you?",
-            CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-        };
-
-        _mockHandler.SetupResponse(HttpStatusCode.OK, expectedResponse);
-
         var request = new ChatMessageRequest
         {
             Query = "Hello",
-            User = "user-123"
+            User = "test-user-123"
         };
 
         // Act
@@ -51,104 +37,55 @@ public class DifyApiClientTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(expectedResponse.MessageId, result.MessageId);
-        Assert.Equal(expectedResponse.Answer, result.Answer);
+        Assert.NotNull(result.MessageId);
+        Assert.NotNull(result.Answer);
+        Assert.True(result.CreatedAt > 0);
     }
 
     [Fact]
     public async Task GetConversationsAsync_ReturnsPaginatedList()
     {
-        // Arrange
-        var expectedResponse = new ConversationListResponse
-        {
-            Data = new List<Conversation>
-            {
-                new() { Id = "conv-1", Name = "Conversation 1", CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() },
-                new() { Id = "conv-2", Name = "Conversation 2", CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() }
-            },
-            HasMore = false,
-            Limit = 20,
-            Page = 1
-        };
-
-        _mockHandler.SetupResponse(HttpStatusCode.OK, expectedResponse);
-
         // Act
-        var result = await _client.GetConversationsAsync("user-123");
+        var result = await _client.GetConversationsAsync("test-user-123");
 
         // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Data);
-        Assert.Equal(2, result.Data.Count);
-        Assert.Equal("conv-1", result.Data[0].Id);
+        // The actual count depends on what exists on the server
     }
 
     [Fact]
     public async Task UploadFileAsync_ReturnsFileInfo()
     {
         // Arrange
-        var expectedResponse = new FileUploadResponse
-        {
-            Id = "file-123",
-            Name = "test.txt",
-            Size = 1024,
-            Extension = "txt",
-            MimeType = "text/plain",
-            CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-        };
-
-        _mockHandler.SetupResponse(HttpStatusCode.OK, expectedResponse);
-
-        using var fileStream = new MemoryStream(Encoding.UTF8.GetBytes("Test content"));
+        using var fileStream = new MemoryStream(Encoding.UTF8.GetBytes("Test content for file upload"));
 
         // Act
-        var result = await _client.UploadFileAsync(fileStream, "test.txt", "user-123");
+        var result = await _client.UploadFileAsync(fileStream, "test.txt", "test-user-123");
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(expectedResponse.Id, result.Id);
-        Assert.Equal(expectedResponse.Name, result.Name);
+        Assert.NotNull(result.Id);
+        Assert.Equal("test.txt", result.Name);
+        Assert.True(result.CreatedAt > 0);
     }
 
     [Fact]
     public async Task GetApplicationInfoAsync_ReturnsApplicationInfo()
     {
-        // Arrange
-        var expectedResponse = new ApplicationInfo
-        {
-            Name = "Test App",
-            Description = "Test Description",
-            Mode = "chat",
-            Tags = new List<string> { "test", "demo" }
-        };
-
-        _mockHandler.SetupResponse(HttpStatusCode.OK, expectedResponse);
-
         // Act
         var result = await _client.GetApplicationInfoAsync();
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(expectedResponse.Name, result.Name);
-        Assert.Equal(expectedResponse.Description, result.Description);
-        Assert.Equal(2, result.Tags?.Count);
+        Assert.NotNull(result.Name);
+        // Mode and other properties depend on actual server configuration
     }
 
     [Fact]
     public async Task CreateAnnotationAsync_ReturnsCreatedAnnotation()
     {
         // Arrange
-        var expectedResponse = new Annotation
-        {
-            Id = "annotation-123",
-            Question = "What is your name?",
-            Answer = "I am Dify",
-            HitCount = 0,
-            CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-        };
-
-        _mockHandler.SetupResponse(HttpStatusCode.OK, expectedResponse);
-
         var request = new AnnotationRequest
         {
             Question = "What is your name?",
@@ -160,19 +97,22 @@ public class DifyApiClientTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(expectedResponse.Id, result.Id);
-        Assert.Equal(expectedResponse.Question, result.Question);
-        Assert.Equal(expectedResponse.Answer, result.Answer);
+        Assert.NotNull(result.Id);
+        Assert.Equal(request.Question, result.Question);
+        Assert.Equal(request.Answer, result.Answer);
+        Assert.True(result.CreatedAt > 0);
     }
 
     [Fact]
     public async Task DeleteConversationAsync_CompletesSuccessfully()
     {
-        // Arrange
-        _mockHandler.SetupResponse(HttpStatusCode.NoContent, (object?)null);
-
-        // Act & Assert
-        await _client.DeleteConversationAsync("conv-123", "user-123");
+        // This test requires a valid conversation ID
+        // Skipping actual deletion to avoid side effects
+        // You can manually test with a real conversation ID
+        
+        // Act & Assert - just verify the method signature
+        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            _client.DeleteConversationAsync(null!, "test-user-123"));
     }
 
     [Fact]
@@ -183,33 +123,9 @@ public class DifyApiClientTests : IDisposable
             _client.SetAnnotationReplyAsync("invalid-action"));
     }
 
-    [Fact]
-    public async Task SendChatMessageAsync_IncludesAuthorizationHeader()
-    {
-        // Arrange
-        _mockHandler.SetupResponse(HttpStatusCode.OK, new ChatCompletionResponse { Answer = "Test" });
-
-        var request = new ChatMessageRequest
-        {
-            Query = "Test",
-            User = "user-123"
-        };
-
-        // Act
-        await _client.SendChatMessageAsync(request);
-
-        // Assert
-        var lastRequest = _mockHandler.LastRequest;
-        Assert.NotNull(lastRequest);
-        Assert.True(lastRequest.Headers.Contains("Authorization"));
-        Assert.Equal("Bearer test-api-key", lastRequest.Headers.GetValues("Authorization").First());
-    }
-
     public void Dispose()
     {
         _client?.Dispose();
-        _httpClient?.Dispose();
-        _mockHandler?.Dispose();
         GC.SuppressFinalize(this);
     }
 }

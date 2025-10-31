@@ -9,3 +9,4 @@
 /src/DifyApiClient/obj
 /tests/DifyApiClient.Tests/bin/Debug/net9.0
 /tests/DifyApiClient.Tests/obj
+.vs/**
