@@ -1,8 +1,6 @@
 using DifyApiClient.Models;
+using DifyApiClient.Services;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json;
 
 namespace DifyApiClient;
@@ -10,14 +8,21 @@ namespace DifyApiClient;
 /// <summary>
 /// Client for interacting with the Dify Chat API
 /// </summary>
-public class DifyApiClient : IDisposable
+public class DifyApiClient : IDifyApiClient
 {
-    private const string NullDeserializationError = "Response deserialization returned null";
-    
     private readonly HttpClient _httpClient;
     private readonly bool _disposeHttpClient;
-    private readonly JsonSerializerOptions _jsonOptions;
     private bool _disposed;
+
+    // Feature-specific services
+    private readonly IChatService _chatService;
+    private readonly IConversationService _conversationService;
+    private readonly IFileService _fileService;
+    private readonly IMessageService _messageService;
+    private readonly IAudioService _audioService;
+    private readonly IApplicationService _applicationService;
+    private readonly IAnnotationService _annotationService;
+    private readonly IFeedbackService _feedbackService;
 
     public DifyApiClient(DifyApiClientOptions options)
         : this(options, new HttpClient(), disposeHttpClient: true)
@@ -38,11 +43,21 @@ public class DifyApiClient : IDisposable
         _httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", options.ApiKey);
 
-        _jsonOptions = new JsonSerializerOptions
+        var jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         };
+
+        // Initialize services
+        _chatService = new ChatService(_httpClient, jsonOptions);
+        _conversationService = new ConversationService(_httpClient, jsonOptions);
+        _fileService = new FileService(_httpClient, jsonOptions);
+        _messageService = new MessageService(_httpClient, jsonOptions);
+        _audioService = new AudioService(_httpClient, jsonOptions);
+        _applicationService = new ApplicationService(_httpClient, jsonOptions);
+        _annotationService = new AnnotationService(_httpClient, jsonOptions);
+        _feedbackService = new FeedbackService(_httpClient, jsonOptions);
     }
 
     #region Chat Operations
@@ -50,70 +65,29 @@ public class DifyApiClient : IDisposable
     /// <summary>
     /// Send a chat message in blocking mode
     /// </summary>
-    public async Task<ChatCompletionResponse> SendChatMessageAsync(
+    public Task<ChatCompletionResponse> SendChatMessageAsync(
         ChatMessageRequest request,
         CancellationToken cancellationToken = default)
     {
-        request.ResponseMode = "blocking";
-        var response = await _httpClient.PostAsJsonAsync("chat-messages", request, _jsonOptions, cancellationToken);
-        
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new HttpRequestException(
-                $"Response status code does not indicate success: {(int)response.StatusCode} ({response.ReasonPhrase}). " +
-                $"Response body: {errorContent}");
-        }
-        
-        return await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _chatService.SendChatMessageAsync(request, cancellationToken);
     }
 
     /// <summary>
     /// Send a chat message in streaming mode
     /// </summary>
-    public async IAsyncEnumerable<ChunkChatCompletionResponse> SendChatMessageStreamAsync(
+    public IAsyncEnumerable<ChunkChatCompletionResponse> SendChatMessageStreamAsync(
         ChatMessageRequest request,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
-        request.ResponseMode = "streaming";
-        
-        using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "chat-messages")
-        {
-            Content = JsonContent.Create(request, options: _jsonOptions)
-        };
-        requestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
-
-        using var response = await _httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var reader = new StreamReader(stream);
-
-        while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
-        {
-            var line = await reader.ReadLineAsync(cancellationToken);
-            if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:"))
-                continue;
-
-            var jsonData = line["data:".Length..].Trim();
-            if (string.IsNullOrWhiteSpace(jsonData))
-                continue;
-
-            var chunk = JsonSerializer.Deserialize<ChunkChatCompletionResponse>(jsonData, _jsonOptions);
-            if (chunk != null)
-                yield return chunk;
-        }
+        return _chatService.SendChatMessageStreamAsync(request, cancellationToken);
     }
 
     /// <summary>
     /// Stop message generation
     /// </summary>
-    public async Task StopGenerationAsync(string taskId, string user, CancellationToken cancellationToken = default)
+    public Task StopGenerationAsync(string taskId, string user, CancellationToken cancellationToken = default)
     {
-        var request = new { user };
-        var response = await _httpClient.PostAsJsonAsync($"chat-messages/{taskId}/stop", request, _jsonOptions, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        return _chatService.StopGenerationAsync(taskId, user, cancellationToken);
     }
 
     #endregion
@@ -123,20 +97,13 @@ public class DifyApiClient : IDisposable
     /// <summary>
     /// Upload a file
     /// </summary>
-    public async Task<FileUploadResponse> UploadFileAsync(
+    public Task<FileUploadResponse> UploadFileAsync(
         Stream fileStream,
         string fileName,
         string user,
         CancellationToken cancellationToken = default)
     {
-        using var content = new MultipartFormDataContent();
-        content.Add(new StreamContent(fileStream), "file", fileName);
-        content.Add(new StringContent(user), "user");
-
-        var response = await _httpClient.PostAsync("files/upload", content, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<FileUploadResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _fileService.UploadFileAsync(fileStream, fileName, user, cancellationToken);
     }
 
     #endregion
@@ -146,99 +113,60 @@ public class DifyApiClient : IDisposable
     /// <summary>
     /// Get conversation history messages
     /// </summary>
-    public async Task<MessageListResponse> GetConversationMessagesAsync(
+    public Task<MessageListResponse> GetConversationMessagesAsync(
         string conversationId,
         string user,
         string? firstId = null,
         int limit = 20,
         CancellationToken cancellationToken = default)
     {
-        var queryParams = new List<string>
-        {
-            $"user={Uri.EscapeDataString(user)}",
-            $"conversation_id={Uri.EscapeDataString(conversationId)}",
-            $"limit={limit}"
-        };
-
-        if (!string.IsNullOrEmpty(firstId))
-            queryParams.Add($"first_id={Uri.EscapeDataString(firstId)}");
-
-        var url = $"messages?{string.Join("&", queryParams)}";
-        var response = await _httpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<MessageListResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _conversationService.GetConversationMessagesAsync(conversationId, user, firstId, limit, cancellationToken);
     }
 
     /// <summary>
     /// Get conversations list
     /// </summary>
-    public async Task<ConversationListResponse> GetConversationsAsync(
+    public Task<ConversationListResponse> GetConversationsAsync(
         string user,
         string? lastId = null,
         int limit = 20,
         bool? pinned = null,
         CancellationToken cancellationToken = default)
     {
-        var queryParams = new List<string>
-        {
-            $"user={Uri.EscapeDataString(user)}",
-            $"limit={limit}"
-        };
-
-        if (!string.IsNullOrEmpty(lastId))
-            queryParams.Add($"last_id={Uri.EscapeDataString(lastId)}");
-
-        if (pinned.HasValue)
-            queryParams.Add($"pinned={pinned.Value.ToString().ToLower()}");
-
-        var url = $"conversations?{string.Join("&", queryParams)}";
-        var response = await _httpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ConversationListResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _conversationService.GetConversationsAsync(user, lastId, limit, pinned, cancellationToken);
     }
 
     /// <summary>
     /// Delete a conversation
     /// </summary>
-    public async Task DeleteConversationAsync(
+    public Task DeleteConversationAsync(
         string conversationId,
         string user,
         CancellationToken cancellationToken = default)
     {
-        var url = $"conversations/{conversationId}?user={Uri.EscapeDataString(user)}";
-        var response = await _httpClient.DeleteAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        return _conversationService.DeleteConversationAsync(conversationId, user, cancellationToken);
     }
 
     /// <summary>
     /// Rename a conversation
     /// </summary>
-    public async Task<Conversation> RenameConversationAsync(
+    public Task<Conversation> RenameConversationAsync(
         string conversationId,
         ConversationRenameRequest request,
         CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PostAsJsonAsync($"conversations/{conversationId}/name", request, _jsonOptions, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<Conversation>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _conversationService.RenameConversationAsync(conversationId, request, cancellationToken);
     }
 
     /// <summary>
     /// Get conversation variables
     /// </summary>
-    public async Task<Dictionary<string, object>> GetConversationVariablesAsync(
+    public Task<Dictionary<string, object>> GetConversationVariablesAsync(
         string conversationId,
         string user,
         CancellationToken cancellationToken = default)
     {
-        var url = $"conversations/{conversationId}/variables?user={Uri.EscapeDataString(user)}";
-        var response = await _httpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<Dictionary<string, object>>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _conversationService.GetConversationVariablesAsync(conversationId, user, cancellationToken);
     }
 
     #endregion
@@ -248,28 +176,23 @@ public class DifyApiClient : IDisposable
     /// <summary>
     /// Submit message feedback
     /// </summary>
-    public async Task SubmitMessageFeedbackAsync(
+    public Task SubmitMessageFeedbackAsync(
         string messageId,
         MessageFeedbackRequest request,
         CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PostAsJsonAsync($"messages/{messageId}/feedbacks", request, _jsonOptions, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        return _messageService.SubmitMessageFeedbackAsync(messageId, request, cancellationToken);
     }
 
     /// <summary>
     /// Get suggested questions for a message
     /// </summary>
-    public async Task<SuggestedQuestionsResponse> GetSuggestedQuestionsAsync(
+    public Task<SuggestedQuestionsResponse> GetSuggestedQuestionsAsync(
         string messageId,
         string user,
         CancellationToken cancellationToken = default)
     {
-        var url = $"messages/{messageId}/suggested?user={Uri.EscapeDataString(user)}";
-        var response = await _httpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<SuggestedQuestionsResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _messageService.GetSuggestedQuestionsAsync(messageId, user, cancellationToken);
     }
 
     #endregion
@@ -279,33 +202,23 @@ public class DifyApiClient : IDisposable
     /// <summary>
     /// Convert speech to text
     /// </summary>
-    public async Task<string> SpeechToTextAsync(
+    public Task<string> SpeechToTextAsync(
         Stream audioStream,
         string fileName,
         string user,
         CancellationToken cancellationToken = default)
     {
-        using var content = new MultipartFormDataContent();
-        content.Add(new StreamContent(audioStream), "file", fileName);
-        content.Add(new StringContent(user), "user");
-
-        var response = await _httpClient.PostAsync("audio-to-text", content, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        
-        var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(_jsonOptions, cancellationToken);
-        return result?["text"] ?? string.Empty;
+        return _audioService.SpeechToTextAsync(audioStream, fileName, user, cancellationToken);
     }
 
     /// <summary>
     /// Convert text to audio
     /// </summary>
-    public async Task<Stream> TextToAudioAsync(
+    public Task<Stream> TextToAudioAsync(
         TextToAudioRequest request,
         CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("text-to-audio", request, _jsonOptions, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStreamAsync(cancellationToken);
+        return _audioService.TextToAudioAsync(request, cancellationToken);
     }
 
     #endregion
@@ -315,45 +228,33 @@ public class DifyApiClient : IDisposable
     /// <summary>
     /// Get application basic information
     /// </summary>
-    public async Task<ApplicationInfo> GetApplicationInfoAsync(CancellationToken cancellationToken = default)
+    public Task<ApplicationInfo> GetApplicationInfoAsync(CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.GetAsync("info", cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ApplicationInfo>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _applicationService.GetApplicationInfoAsync(cancellationToken);
     }
 
     /// <summary>
     /// Get application parameters
     /// </summary>
-    public async Task<ApplicationParameters> GetApplicationParametersAsync(CancellationToken cancellationToken = default)
+    public Task<ApplicationParameters> GetApplicationParametersAsync(CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.GetAsync("parameters", cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ApplicationParameters>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _applicationService.GetApplicationParametersAsync(cancellationToken);
     }
 
     /// <summary>
     /// Get application meta information
     /// </summary>
-    public async Task<ApplicationMeta> GetApplicationMetaAsync(CancellationToken cancellationToken = default)
+    public Task<ApplicationMeta> GetApplicationMetaAsync(CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.GetAsync("meta", cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ApplicationMeta>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _applicationService.GetApplicationMetaAsync(cancellationToken);
     }
 
     /// <summary>
     /// Get application WebApp settings
     /// </summary>
-    public async Task<ApplicationSite> GetApplicationSiteAsync(CancellationToken cancellationToken = default)
+    public Task<ApplicationSite> GetApplicationSiteAsync(CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.GetAsync("site", cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ApplicationSite>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _applicationService.GetApplicationSiteAsync(cancellationToken);
     }
 
     #endregion
@@ -363,88 +264,65 @@ public class DifyApiClient : IDisposable
     /// <summary>
     /// Get annotation list
     /// </summary>
-    public async Task<AnnotationListResponse> GetAnnotationsAsync(
+    public Task<AnnotationListResponse> GetAnnotationsAsync(
         int page = 1,
         int limit = 20,
         CancellationToken cancellationToken = default)
     {
-        var url = $"apps/annotations?page={page}&limit={limit}";
-        var response = await _httpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<AnnotationListResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _annotationService.GetAnnotationsAsync(page, limit, cancellationToken);
     }
 
     /// <summary>
     /// Create an annotation
     /// </summary>
-    public async Task<Annotation> CreateAnnotationAsync(
+    public Task<Annotation> CreateAnnotationAsync(
         AnnotationRequest request,
         CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("apps/annotations", request, _jsonOptions, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<Annotation>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _annotationService.CreateAnnotationAsync(request, cancellationToken);
     }
 
     /// <summary>
     /// Update an annotation
     /// </summary>
-    public async Task<Annotation> UpdateAnnotationAsync(
+    public Task<Annotation> UpdateAnnotationAsync(
         string annotationId,
         AnnotationRequest request,
         CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PutAsJsonAsync($"apps/annotations/{annotationId}", request, _jsonOptions, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<Annotation>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _annotationService.UpdateAnnotationAsync(annotationId, request, cancellationToken);
     }
 
     /// <summary>
     /// Delete an annotation
     /// </summary>
-    public async Task DeleteAnnotationAsync(
+    public Task DeleteAnnotationAsync(
         string annotationId,
         CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.DeleteAsync($"apps/annotations/{annotationId}", cancellationToken);
-        response.EnsureSuccessStatusCode();
+        return _annotationService.DeleteAnnotationAsync(annotationId, cancellationToken);
     }
 
     /// <summary>
     /// Enable or disable annotation reply settings
     /// </summary>
-    public async Task<AnnotationReplyJobResponse> SetAnnotationReplyAsync(
+    public Task<AnnotationReplyJobResponse> SetAnnotationReplyAsync(
         string action,
         AnnotationReplySettingsRequest? request = null,
         CancellationToken cancellationToken = default)
     {
-        if (action != "enable" && action != "disable")
-            throw new ArgumentException("Action must be 'enable' or 'disable'", nameof(action));
-
-        var response = await _httpClient.PostAsJsonAsync($"apps/annotation-reply/{action}", request ?? new AnnotationReplySettingsRequest(), _jsonOptions, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<AnnotationReplyJobResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _annotationService.SetAnnotationReplyAsync(action, request, cancellationToken);
     }
 
     /// <summary>
     /// Query annotation reply settings task status
     /// </summary>
-    public async Task<AnnotationReplyJobResponse> GetAnnotationReplyStatusAsync(
+    public Task<AnnotationReplyJobResponse> GetAnnotationReplyStatusAsync(
         string action,
         string jobId,
         CancellationToken cancellationToken = default)
     {
-        if (action != "enable" && action != "disable")
-            throw new ArgumentException("Action must be 'enable' or 'disable'", nameof(action));
-
-        var response = await _httpClient.GetAsync($"apps/annotation-reply/{action}/status/{jobId}", cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<AnnotationReplyJobResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _annotationService.GetAnnotationReplyStatusAsync(action, jobId, cancellationToken);
     }
 
     #endregion
@@ -454,16 +332,12 @@ public class DifyApiClient : IDisposable
     /// <summary>
     /// Get application feedbacks
     /// </summary>
-    public async Task<FeedbackListResponse> GetFeedbacksAsync(
+    public Task<FeedbackListResponse> GetFeedbacksAsync(
         int page = 1,
         int limit = 20,
         CancellationToken cancellationToken = default)
     {
-        var url = $"apps/feedbacks?page={page}&limit={limit}";
-        var response = await _httpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<FeedbackListResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException(NullDeserializationError);
+        return _feedbackService.GetFeedbacksAsync(page, limit, cancellationToken);
     }
 
     #endregion

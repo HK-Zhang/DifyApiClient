@@ -1,4 +1,5 @@
 using DifyApiClient.Models;
+using DifyApiClient.Exceptions;
 using Microsoft.Extensions.Configuration;
 using System.Text;
 using Xunit;
@@ -413,7 +414,7 @@ public class DifyApiClientTests : IDisposable
     public async Task DeleteConversation_WithNonExistentId_ThrowsException()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => 
+        var exception = await Assert.ThrowsAsync<DifyApiException>(() => 
             _client.DeleteConversationAsync("non-existent-id-12345", TestUser));
         
         Assert.Contains("404", exception.Message);
