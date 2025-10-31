@@ -6,7 +6,7 @@ These tests are configured to run against a real Dify API endpoint.
 
 ### API Endpoint
 
-The tests are configured to use: `http://osl4243:8980/v1`
+The tests are configured to use: `http://localhost:8980/v1`
 
 ### API Key Configuration (User Secrets)
 

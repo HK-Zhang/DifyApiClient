@@ -74,7 +74,7 @@ using DifyApiClient.Models;
 // Initialize the client
 var options = new DifyApiClientOptions
 {
-    BaseUrl = "http://osl4243/v1",
+    BaseUrl = "http://localhost/v1",
     ApiKey = "your-api-key"
 };
 
@@ -90,6 +90,15 @@ var request = new ChatMessageRequest
 var response = await client.SendChatMessageAsync(request);
 Console.WriteLine(response.Answer);
 ```
+
+## Documentation
+
+- [Logging Guide](docs/LOGGING.md) - Comprehensive logging documentation
+- [Changelog](docs/CHANGELOG.md) - Version history and release notes
+- [Setup Summary](docs/SETUP_SUMMARY.md) - Project setup information
+- [GitHub Actions Summary](docs/GITHUB_ACTIONS_SUMMARY.md) - CI/CD pipeline details
+- [Publication Checklist](docs/PUBLICATION_CHECKLIST.md) - Release checklist
+- [Documentation Index](docs/DOCUMENTATION_INDEX.md) - Complete documentation index
 
 ## Usage Examples
 
@@ -150,7 +159,7 @@ var logger = loggerFactory.CreateLogger<DifyApiClient>();
 // Create client with logger
 var options = new DifyApiClientOptions
 {
-    BaseUrl = "http://osl4243/v1",
+    BaseUrl = "http://localhost/v1",
     ApiKey = "your-api-key"
 };
 
@@ -160,7 +169,7 @@ using var client = new DifyApiClient(options, logger);
 var response = await client.SendChatMessageAsync(request);
 ```
 
-**See [LOGGING.md](LOGGING.md) for detailed logging documentation.**
+**See [LOGGING.md](docs/LOGGING.md) for detailed logging documentation.**
 
 ### Conversation Management
 
