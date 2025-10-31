@@ -21,12 +21,13 @@ public class DifyApiClientTests : IDisposable
             .AddUserSecrets<DifyApiClientTests>()
             .Build();
 
-        // Get API key from user secrets
+        // Get API key and BaseUrl from user secrets
         var apiKey = configuration["DifyApiKey"] ?? "app-your-api-key-here";
+        var baseUrl = configuration["DifyBaseUrl"] ?? "http://localhost:8000/v1";
         
         var options = new DifyApiClientOptions
         {
-            BaseUrl = "http://osl4243:8980/v1",
+            BaseUrl = baseUrl,
             ApiKey = apiKey
         };
 

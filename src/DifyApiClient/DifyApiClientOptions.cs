@@ -6,7 +6,7 @@ namespace DifyApiClient;
 public class DifyApiClientOptions
 {
     /// <summary>
-    /// Base URL of the Dify API (e.g., "http://osl4243/v1")
+    /// Base URL of the Dify API (e.g., "http://abc/v1")
     /// </summary>
     public required string BaseUrl { get; set; }
 
