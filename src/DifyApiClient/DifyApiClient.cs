@@ -12,6 +12,9 @@ namespace DifyApiClient;
 /// </summary>
 public class DifyApiClient : IDifyApiClient
 {
+    private const string UserAgentProduct = "DifyApiClient";
+    private const string UserAgentVersion = "1.0.0";
+    
     private readonly HttpClient _httpClient;
     private readonly bool _disposeHttpClient;
     private readonly ILogger<DifyApiClient> _logger;
@@ -51,6 +54,10 @@ public class DifyApiClient : IDifyApiClient
         _httpClient.Timeout = options.Timeout;
         _httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", options.ApiKey);
+        
+        // Set User-Agent header for tracking
+        _httpClient.DefaultRequestHeaders.UserAgent.Clear();
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{UserAgentProduct}/{UserAgentVersion}");
 
         _logger.LogInformation("DifyApiClient initialized with base URL: {BaseUrl}", baseUrl);
 

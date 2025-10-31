@@ -8,22 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- 
+- **Production-Ready Features** - Added comprehensive non-functional features for enterprise use
+- **ConfigureAwait(false)** - All async calls now use ConfigureAwait(false) to prevent deadlocks
+- **IHttpClientFactory Support** - Full integration with IHttpClientFactory for better HttpClient lifecycle management
+- **Dependency Injection Extensions** - `AddDifyApiClient()` and `AddDifyApiClientWithResilience()` extension methods
+- **Polly Resilience Policies** - Integrated retry, circuit breaker, and timeout policies
+- **XML Documentation Generation** - Enabled XML documentation file for better IntelliSense
+- **User-Agent Header** - Automatic User-Agent header with library name and version
+- **Deterministic Builds** - Enabled deterministic and CI builds for reproducibility
+- **Comprehensive Documentation** - Added DEPENDENCY_INJECTION.md and RESILIENCE.md guides
 
 ### Changed
-- 
+- **Multi-Targeting** - Now targets .NET 8.0 and .NET 9.0 (was .NET 9.0 only)
+- **Package Dependencies** - Added Microsoft.Extensions.Http, Polly, and related packages
+- **README** - Updated with dependency injection quick start and new feature highlights
 
-### Deprecated
-- 
-
-### Removed
-- 
-
-### Fixed
-- 
-
-### Security
-- 
+### Technical Details
+- Added 7 high-priority production-ready features
+- Created 2 new comprehensive documentation files (1100+ lines)
+- Zero breaking changes - fully backward compatible
+- All async methods now use ConfigureAwait(false)
+- Standard resilience policies: 3 retries with exponential backoff, circuit breaker after 5 failures 
 
 ## [1.0.0] - 2025-10-31
 

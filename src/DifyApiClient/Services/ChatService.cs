@@ -27,7 +27,7 @@ internal class ChatService : BaseApiClient, IChatService
         var result = await PostAsync<ChatMessageRequest, ChatCompletionResponse>(
             "chat-messages",
             request,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
         Logger.LogInformation("Chat message completed successfully");
         return result;
     }
@@ -48,16 +48,16 @@ internal class ChatService : BaseApiClient, IChatService
         using var response = await HttpClient.SendAsync(
             requestMessage,
             HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         using var reader = new StreamReader(stream);
 
         var chunkCount = 0;
         while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
         {
-            var line = await reader.ReadLineAsync(cancellationToken);
+            var line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:"))
                 continue;
 
@@ -83,7 +83,7 @@ internal class ChatService : BaseApiClient, IChatService
     {
         Logger.LogInformation("Stopping chat message generation for task {TaskId}", taskId);
         var request = new { user };
-        await PostAsync($"chat-messages/{taskId}/stop", request, cancellationToken);
+        await PostAsync($"chat-messages/{taskId}/stop", request, cancellationToken).ConfigureAwait(false);
         Logger.LogInformation("Chat message generation stopped for task {TaskId}", taskId);
     }
 }

@@ -30,10 +30,10 @@ internal class BaseApiClient
     {
         Logger.LogDebug("GET request to {Url}", url);
         
-        var response = await HttpClient.GetAsync(url, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        var response = await HttpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
         
-        var result = await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken)
+        var result = await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken).ConfigureAwait(false)
             ?? throw new DifyApiException(NullDeserializationError);
             
         Logger.LogDebug("GET request to {Url} completed successfully", url);
@@ -47,10 +47,10 @@ internal class BaseApiClient
     {
         Logger.LogDebug("POST request to {Url}", url);
         
-        var response = await HttpClient.PostAsJsonAsync(url, request, JsonOptions, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        var response = await HttpClient.PostAsJsonAsync(url, request, JsonOptions, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
         
-        var result = await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken)
+        var result = await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken).ConfigureAwait(false)
             ?? throw new DifyApiException(NullDeserializationError);
             
         Logger.LogDebug("POST request to {Url} completed successfully", url);
@@ -64,8 +64,8 @@ internal class BaseApiClient
     {
         Logger.LogDebug("POST request to {Url} (no response body)", url);
         
-        var response = await HttpClient.PostAsJsonAsync(url, request, JsonOptions, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        var response = await HttpClient.PostAsJsonAsync(url, request, JsonOptions, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
         
         Logger.LogDebug("POST request to {Url} completed successfully", url);
     }
@@ -77,10 +77,10 @@ internal class BaseApiClient
     {
         Logger.LogDebug("POST request to {Url} with custom content", url);
         
-        var response = await HttpClient.PostAsync(url, content, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        var response = await HttpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
         
-        var result = await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken)
+        var result = await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken).ConfigureAwait(false)
             ?? throw new DifyApiException(NullDeserializationError);
             
         Logger.LogDebug("POST request to {Url} completed successfully", url);
@@ -94,10 +94,10 @@ internal class BaseApiClient
     {
         Logger.LogDebug("PUT request to {Url}", url);
         
-        var response = await HttpClient.PutAsJsonAsync(url, request, JsonOptions, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        var response = await HttpClient.PutAsJsonAsync(url, request, JsonOptions, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
         
-        var result = await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken)
+        var result = await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken).ConfigureAwait(false)
             ?? throw new DifyApiException(NullDeserializationError);
             
         Logger.LogDebug("PUT request to {Url} completed successfully", url);
@@ -111,8 +111,8 @@ internal class BaseApiClient
         Logger.LogDebug("DELETE request to {Url}", url);
         
         // Use simple DELETE - the API issue is actually on the server side
-        var response = await HttpClient.DeleteAsync(url, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        var response = await HttpClient.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
         
         Logger.LogDebug("DELETE request to {Url} completed successfully", url);
     }
@@ -123,7 +123,7 @@ internal class BaseApiClient
     {
         if (!response.IsSuccessStatusCode)
         {
-            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             
             Logger.LogError(
                 "HTTP request failed with status {StatusCode} ({ReasonPhrase}). Response: {ResponseBody}",
