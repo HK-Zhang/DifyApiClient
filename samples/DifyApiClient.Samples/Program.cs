@@ -7,15 +7,18 @@ namespace DifyApiClient.Samples;
 /// <summary>
 /// Sample application demonstrating Dify API Client usage
 /// </summary>
-class Program
+static class Program
 {
+    private const string DefaultUserId = "demo-user";
+    private const string EnterUserIdPrompt = "Enter user ID: ";
+
     static async Task Main(string[] args)
     {
         Console.WriteLine("=== Dify API Client Sample ===\n");
 
         // Load configuration from user secrets
         var configuration = new ConfigurationBuilder()
-            .AddUserSecrets<Program>()
+            .AddUserSecrets(typeof(Program).Assembly)
             .Build();
 
         // Configure the client
@@ -84,8 +87,8 @@ class Program
         Console.Write("Enter your message: ");
         var query = Console.ReadLine() ?? string.Empty;
 
-        Console.Write("Enter user ID: ");
-        var userId = Console.ReadLine() ?? "demo-user";
+        Console.Write(EnterUserIdPrompt);
+        var userId = Console.ReadLine() ?? DefaultUserId;
 
         var request = new ChatMessageRequest
         {
@@ -112,8 +115,8 @@ class Program
         Console.Write("Enter your message: ");
         var query = Console.ReadLine() ?? string.Empty;
 
-        Console.Write("Enter user ID: ");
-        var userId = Console.ReadLine() ?? "demo-user";
+        Console.Write(EnterUserIdPrompt);
+        var userId = Console.ReadLine() ?? DefaultUserId;
 
         var request = new ChatMessageRequest
         {
@@ -163,8 +166,8 @@ class Program
 
     static async Task ListConversationsAsync(DifyApiClient client)
     {
-        Console.Write("Enter user ID: ");
-        var userId = Console.ReadLine() ?? "demo-user";
+        Console.Write(EnterUserIdPrompt);
+        var userId = Console.ReadLine() ?? DefaultUserId;
 
         Console.WriteLine("\nFetching conversations...");
         var conversations = await client.GetConversationsAsync(userId);
@@ -257,8 +260,8 @@ class Program
             return;
         }
 
-        Console.Write("Enter user ID: ");
-        var userId = Console.ReadLine() ?? "demo-user";
+        Console.Write(EnterUserIdPrompt);
+        var userId = Console.ReadLine() ?? DefaultUserId;
 
         Console.WriteLine("\nUploading file...");
 
