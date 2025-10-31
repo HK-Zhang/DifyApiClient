@@ -1,5 +1,7 @@
 using DifyApiClient.Models;
 using DifyApiClient.Services;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -12,6 +14,7 @@ public class DifyApiClient : IDifyApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly bool _disposeHttpClient;
+    private readonly ILogger<DifyApiClient> _logger;
     private bool _disposed;
 
     // Feature-specific services
@@ -25,17 +28,23 @@ public class DifyApiClient : IDifyApiClient
     private readonly IFeedbackService _feedbackService;
 
     public DifyApiClient(DifyApiClientOptions options)
-        : this(options, new HttpClient(), disposeHttpClient: true)
+        : this(options, new HttpClient(), disposeHttpClient: true, logger: null)
     {
     }
 
-    public DifyApiClient(DifyApiClientOptions options, HttpClient httpClient, bool disposeHttpClient = false)
+    public DifyApiClient(DifyApiClientOptions options, ILogger<DifyApiClient>? logger)
+        : this(options, new HttpClient(), disposeHttpClient: true, logger: logger)
+    {
+    }
+
+    public DifyApiClient(DifyApiClientOptions options, HttpClient httpClient, bool disposeHttpClient = false, ILogger<DifyApiClient>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(httpClient);
         
         _httpClient = httpClient;
         _disposeHttpClient = disposeHttpClient;
+        _logger = logger ?? NullLogger<DifyApiClient>.Instance;
 
         var baseUrl = options.BaseUrl.TrimEnd('/');
         _httpClient.BaseAddress = new Uri($"{baseUrl}/");
@@ -43,21 +52,23 @@ public class DifyApiClient : IDifyApiClient
         _httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", options.ApiKey);
 
+        _logger.LogInformation("DifyApiClient initialized with base URL: {BaseUrl}", baseUrl);
+
         var jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         };
 
-        // Initialize services
-        _chatService = new ChatService(_httpClient, jsonOptions);
-        _conversationService = new ConversationService(_httpClient, jsonOptions);
-        _fileService = new FileService(_httpClient, jsonOptions);
-        _messageService = new MessageService(_httpClient, jsonOptions);
-        _audioService = new AudioService(_httpClient, jsonOptions);
-        _applicationService = new ApplicationService(_httpClient, jsonOptions);
-        _annotationService = new AnnotationService(_httpClient, jsonOptions);
-        _feedbackService = new FeedbackService(_httpClient, jsonOptions);
+        // Initialize services with logger
+        _chatService = new ChatService(_httpClient, jsonOptions, _logger);
+        _conversationService = new ConversationService(_httpClient, jsonOptions, _logger);
+        _fileService = new FileService(_httpClient, jsonOptions, _logger);
+        _messageService = new MessageService(_httpClient, jsonOptions, _logger);
+        _audioService = new AudioService(_httpClient, jsonOptions, _logger);
+        _applicationService = new ApplicationService(_httpClient, jsonOptions, _logger);
+        _annotationService = new AnnotationService(_httpClient, jsonOptions, _logger);
+        _feedbackService = new FeedbackService(_httpClient, jsonOptions, _logger);
     }
 
     #region Chat Operations

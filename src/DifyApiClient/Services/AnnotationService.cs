@@ -1,5 +1,6 @@
 using DifyApiClient.Core;
 using DifyApiClient.Models;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace DifyApiClient.Services;
@@ -9,8 +10,8 @@ namespace DifyApiClient.Services;
 /// </summary>
 internal class AnnotationService : BaseApiClient, IAnnotationService
 {
-    public AnnotationService(HttpClient httpClient, JsonSerializerOptions jsonOptions)
-        : base(httpClient, jsonOptions)
+    public AnnotationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
+        : base(httpClient, jsonOptions, logger)
     {
     }
 

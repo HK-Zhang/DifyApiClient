@@ -16,3 +16,5 @@ nupkg/
 *.nupkg
 *.snupkg
 src/DifyApiClient/bin/**
+samples/DifyApiClient.Samples/bin/**
+tests/DifyApiClient.Tests/bin/**

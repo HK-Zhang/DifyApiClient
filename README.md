@@ -30,6 +30,13 @@ A comprehensive .NET client library for the [Dify](https://dify.ai/) Chat Applic
 - Cancellation token support
 - IDisposable implementation
 - Comprehensive unit tests
+- **Built-in logging support** (Microsoft.Extensions.Logging)
+
+✅ **Observability**
+- Structured logging for all operations
+- HTTP request/response logging
+- Error logging with detailed context
+- Optional and backward compatible
 
 ## Installation
 
@@ -121,6 +128,39 @@ var fileInfo = await client.UploadFileAsync(
 
 Console.WriteLine($"Uploaded file: {fileInfo.Id}");
 ```
+
+### Logging Support
+
+Enable comprehensive logging for observability and debugging:
+
+```csharp
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+using var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder
+        .SetMinimumLevel(LogLevel.Information)
+        .AddConsole()
+        .AddFilter("DifyApiClient", LogLevel.Debug);
+});
+
+var logger = loggerFactory.CreateLogger<DifyApiClient>();
+
+// Create client with logger
+var options = new DifyApiClientOptions
+{
+    BaseUrl = "http://osl4243/v1",
+    ApiKey = "your-api-key"
+};
+
+using var client = new DifyApiClient(options, logger);
+
+// All operations are now logged
+var response = await client.SendChatMessageAsync(request);
+```
+
+**See [LOGGING.md](LOGGING.md) for detailed logging documentation.**
 
 ### Conversation Management
 

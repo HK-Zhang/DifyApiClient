@@ -1,6 +1,7 @@
 using DifyApiClient.Core;
 using DifyApiClient.Models;
 using DifyApiClient.Utilities;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace DifyApiClient.Services;
@@ -10,8 +11,8 @@ namespace DifyApiClient.Services;
 /// </summary>
 internal class ConversationService : BaseApiClient, IConversationService
 {
-    public ConversationService(HttpClient httpClient, JsonSerializerOptions jsonOptions)
-        : base(httpClient, jsonOptions)
+    public ConversationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
+        : base(httpClient, jsonOptions, logger)
     {
     }
 

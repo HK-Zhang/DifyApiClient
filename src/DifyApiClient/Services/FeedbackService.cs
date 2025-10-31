@@ -1,5 +1,6 @@
 using DifyApiClient.Core;
 using DifyApiClient.Models;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace DifyApiClient.Services;
@@ -9,8 +10,8 @@ namespace DifyApiClient.Services;
 /// </summary>
 internal class FeedbackService : BaseApiClient, IFeedbackService
 {
-    public FeedbackService(HttpClient httpClient, JsonSerializerOptions jsonOptions)
-        : base(httpClient, jsonOptions)
+    public FeedbackService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
+        : base(httpClient, jsonOptions, logger)
     {
     }
 

@@ -1,5 +1,6 @@
 using DifyApiClient.Core;
 using DifyApiClient.Models;
+using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -10,8 +11,8 @@ namespace DifyApiClient.Services;
 /// </summary>
 internal class AudioService : BaseApiClient, IAudioService
 {
-    public AudioService(HttpClient httpClient, JsonSerializerOptions jsonOptions)
-        : base(httpClient, jsonOptions)
+    public AudioService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
+        : base(httpClient, jsonOptions, logger)
     {
     }
 
@@ -21,6 +22,7 @@ internal class AudioService : BaseApiClient, IAudioService
         string user,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("Converting speech to text from file: {FileName}", fileName);
         using var content = new MultipartFormDataContent();
         content.Add(new StreamContent(audioStream), "file", fileName);
         content.Add(new StringContent(user), "user");
@@ -31,15 +33,20 @@ internal class AudioService : BaseApiClient, IAudioService
         var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(
             JsonOptions,
             cancellationToken);
-        return result?["text"] ?? string.Empty;
+        var text = result?["text"] ?? string.Empty;
+        Logger.LogInformation("Speech to text conversion completed, text length: {Length}", text.Length);
+        return text;
     }
 
     public async Task<Stream> TextToAudioAsync(
         TextToAudioRequest request,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("Converting text to audio");
         var response = await HttpClient.PostAsJsonAsync("text-to-audio", request, JsonOptions, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStreamAsync(cancellationToken);
+        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        Logger.LogInformation("Text to audio conversion completed");
+        return stream;
     }
 }

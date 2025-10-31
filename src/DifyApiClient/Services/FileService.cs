@@ -1,5 +1,6 @@
 using DifyApiClient.Core;
 using DifyApiClient.Models;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace DifyApiClient.Services;
@@ -9,8 +10,8 @@ namespace DifyApiClient.Services;
 /// </summary>
 internal class FileService : BaseApiClient, IFileService
 {
-    public FileService(HttpClient httpClient, JsonSerializerOptions jsonOptions)
-        : base(httpClient, jsonOptions)
+    public FileService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
+        : base(httpClient, jsonOptions, logger)
     {
     }
 
@@ -20,13 +21,16 @@ internal class FileService : BaseApiClient, IFileService
         string user,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("Uploading file: {FileName}", fileName);
         using var content = new MultipartFormDataContent();
         content.Add(new StreamContent(fileStream), "file", fileName);
         content.Add(new StringContent(user), "user");
 
-        return await PostAsync<FileUploadResponse>(
+        var result = await PostAsync<FileUploadResponse>(
             "files/upload",
             content,
             cancellationToken);
+        Logger.LogInformation("File uploaded successfully: {FileName}, ID: {FileId}", fileName, result.Id);
+        return result;
     }
 }

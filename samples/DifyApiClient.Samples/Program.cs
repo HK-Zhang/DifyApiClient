@@ -1,6 +1,7 @@
 using DifyApiClient;
 using DifyApiClient.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace DifyApiClient.Samples;
 
@@ -21,6 +22,17 @@ static class Program
             .AddUserSecrets(typeof(Program).Assembly)
             .Build();
 
+        // Set up logging
+        using var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder
+                .SetMinimumLevel(LogLevel.Information)
+                .AddConsole()
+                .AddFilter("DifyApiClient", LogLevel.Debug); // Enable debug logs for DifyApiClient
+        });
+
+        var logger = loggerFactory.CreateLogger<global::DifyApiClient.DifyApiClient>();
+
         // Configure the client
         var options = new DifyApiClientOptions
         {
@@ -28,7 +40,10 @@ static class Program
             ApiKey = configuration["DifyApi:ApiKey"] ?? throw new InvalidOperationException("DifyApi:ApiKey not found in user secrets")
         };
 
-        using var client = new DifyApiClient(options);
+        // Create client with logger for observability
+        using var client = new global::DifyApiClient.DifyApiClient(options, logger);
+
+        Console.WriteLine("Logging is enabled. All API operations will be logged.\n");
 
         // Menu
         while (true)
@@ -82,7 +97,7 @@ static class Program
         }
     }
 
-    static async Task SendChatMessageAsync(DifyApiClient client)
+    static async Task SendChatMessageAsync(global::DifyApiClient.DifyApiClient client)
     {
         Console.Write("Enter your message: ");
         var query = Console.ReadLine() ?? string.Empty;
@@ -110,7 +125,7 @@ static class Program
         }
     }
 
-    static async Task SendChatMessageStreamAsync(DifyApiClient client)
+    static async Task SendChatMessageStreamAsync(global::DifyApiClient.DifyApiClient client)
     {
         Console.Write("Enter your message: ");
         var query = Console.ReadLine() ?? string.Empty;
@@ -141,7 +156,7 @@ static class Program
         }
     }
 
-    static async Task GetApplicationInfoAsync(DifyApiClient client)
+    static async Task GetApplicationInfoAsync(global::DifyApiClient.DifyApiClient client)
     {
         Console.WriteLine("\nFetching application information...");
 
@@ -164,7 +179,7 @@ static class Program
         Console.WriteLine($"Text to Speech: {parameters.TextToSpeech?.Enabled}");
     }
 
-    static async Task ListConversationsAsync(DifyApiClient client)
+    static async Task ListConversationsAsync(global::DifyApiClient.DifyApiClient client)
     {
         Console.Write(EnterUserIdPrompt);
         var userId = Console.ReadLine() ?? DefaultUserId;
@@ -191,7 +206,7 @@ static class Program
         Console.WriteLine($"\nHas More: {conversations.HasMore}");
     }
 
-    static async Task ManageAnnotationsAsync(DifyApiClient client)
+    static async Task ManageAnnotationsAsync(global::DifyApiClient.DifyApiClient client)
     {
         Console.WriteLine("\nAnnotation Operations:");
         Console.WriteLine("1. List Annotations");
@@ -249,7 +264,7 @@ static class Program
         }
     }
 
-    static async Task UploadFileAsync(DifyApiClient client)
+    static async Task UploadFileAsync(global::DifyApiClient.DifyApiClient client)
     {
         Console.Write("Enter file path: ");
         var filePath = Console.ReadLine() ?? string.Empty;
