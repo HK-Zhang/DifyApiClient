@@ -50,7 +50,15 @@ public class DifyApiClient : IDisposable
     {
         request.ResponseMode = "blocking";
         var response = await _httpClient.PostAsJsonAsync("chat-messages", request, _jsonOptions, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new HttpRequestException(
+                $"Response status code does not indicate success: {(int)response.StatusCode} ({response.ReasonPhrase}). " +
+                $"Response body: {errorContent}");
+        }
+        
         return await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(_jsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("Response deserialization returned null");
     }

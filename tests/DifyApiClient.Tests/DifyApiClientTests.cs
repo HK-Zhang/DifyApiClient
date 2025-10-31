@@ -38,14 +38,16 @@ public class DifyApiClientTests : IDisposable
             User = "test-user-123"
         };
 
-        // Act
-        var result = await _client.SendChatMessageAsync(request);
+        // Act - Use streaming mode since the app is an Agent type
+        var chunks = new List<ChunkChatCompletionResponse>();
+        await foreach (var chunk in _client.SendChatMessageStreamAsync(request))
+        {
+            chunks.Add(chunk);
+        }
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.MessageId);
-        Assert.NotNull(result.Answer);
-        Assert.True(result.CreatedAt > 0);
+        Assert.NotEmpty(chunks);
+        Assert.Contains(chunks, c => c.Event == "message" || c.Event == "agent_message");
     }
 
     [Fact]

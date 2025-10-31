@@ -11,7 +11,7 @@ public class ChatMessageRequest
     public required string Query { get; set; }
 
     [JsonPropertyName("inputs")]
-    public Dictionary<string, object>? Inputs { get; set; }
+    public Dictionary<string, object> Inputs { get; set; } = new();
 
     [JsonPropertyName("response_mode")]
     public string ResponseMode { get; set; } = "blocking";
