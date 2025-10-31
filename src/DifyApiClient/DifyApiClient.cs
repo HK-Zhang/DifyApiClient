@@ -12,8 +12,9 @@ namespace DifyApiClient;
 /// </summary>
 public class DifyApiClient : IDisposable
 {
+    private const string NullDeserializationError = "Response deserialization returned null";
+    
     private readonly HttpClient _httpClient;
-    private readonly DifyApiClientOptions _options;
     private readonly JsonSerializerOptions _jsonOptions;
     private bool _disposed;
 
@@ -24,13 +25,16 @@ public class DifyApiClient : IDisposable
 
     public DifyApiClient(DifyApiClientOptions options, HttpClient httpClient)
     {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(httpClient);
+        
+        _httpClient = httpClient;
 
-        _httpClient.BaseAddress = new Uri(_options.BaseUrl.TrimEnd('/') + "/");
-        _httpClient.Timeout = _options.Timeout;
+        var baseUrl = options.BaseUrl.TrimEnd('/');
+        _httpClient.BaseAddress = new Uri($"{baseUrl}/");
+        _httpClient.Timeout = options.Timeout;
         _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _options.ApiKey);
+            new AuthenticationHeaderValue("Bearer", options.ApiKey);
 
         _jsonOptions = new JsonSerializerOptions
         {
@@ -60,7 +64,7 @@ public class DifyApiClient : IDisposable
         }
         
         return await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -130,7 +134,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.PostAsync("files/upload", content, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<FileUploadResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     #endregion
@@ -161,7 +165,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<MessageListResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -190,7 +194,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ConversationListResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -217,7 +221,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.PostAsJsonAsync($"conversations/{conversationId}/name", request, _jsonOptions, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<Conversation>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -232,7 +236,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<Dictionary<string, object>>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     #endregion
@@ -263,7 +267,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<SuggestedQuestionsResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     #endregion
@@ -314,7 +318,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync("info", cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ApplicationInfo>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -325,7 +329,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync("parameters", cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ApplicationParameters>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -336,7 +340,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync("meta", cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ApplicationMeta>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -347,7 +351,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync("site", cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ApplicationSite>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     #endregion
@@ -366,7 +370,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<AnnotationListResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -379,7 +383,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.PostAsJsonAsync("apps/annotations", request, _jsonOptions, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<Annotation>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -393,7 +397,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.PutAsJsonAsync($"apps/annotations/{annotationId}", request, _jsonOptions, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<Annotation>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -421,7 +425,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.PostAsJsonAsync($"apps/annotation-reply/{action}", request ?? new AnnotationReplySettingsRequest(), _jsonOptions, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<AnnotationReplyJobResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     /// <summary>
@@ -438,7 +442,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync($"apps/annotation-reply/{action}/status/{jobId}", cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<AnnotationReplyJobResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     #endregion
@@ -457,7 +461,7 @@ public class DifyApiClient : IDisposable
         var response = await _httpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<FeedbackListResponse>(_jsonOptions, cancellationToken)
-            ?? throw new InvalidOperationException("Response deserialization returned null");
+            ?? throw new InvalidOperationException(NullDeserializationError);
     }
 
     #endregion
