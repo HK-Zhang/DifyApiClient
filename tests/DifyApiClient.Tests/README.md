@@ -5,44 +5,54 @@ These tests are configured to run against a real Dify API endpoint.
 ## Configuration
 
 ### API Endpoint
+
 The tests are configured to use: `http://osl4243:8980/v1`
 
-### API Key
-Set the `DIFY_API_KEY` environment variable with your actual Dify API key before running the tests.
+### API Key Configuration (User Secrets)
 
-**PowerShell:**
+This project uses .NET User Secrets to store the API key securely. User secrets are stored outside the project directory and are never committed to source control.
+
+**Set your API key:**
+
 ```powershell
-$env:DIFY_API_KEY = "app-your-actual-api-key"
-dotnet test
+cd tests/DifyApiClient.Tests
+dotnet user-secrets set "DifyApiKey" "your-actual-api-key-here"
 ```
 
-**CMD:**
-```cmd
-set DIFY_API_KEY=app-your-actual-api-key
-dotnet test
+**View your secrets:**
+
+```powershell
+dotnet user-secrets list
 ```
 
-**Bash:**
-```bash
-export DIFY_API_KEY=app-your-actual-api-key
-dotnet test
+**Remove a secret:**
+
+```powershell
+dotnet user-secrets remove "DifyApiKey"
 ```
 
-If no environment variable is set, the tests will use `app-your-api-key-here` as a placeholder (which will likely fail).
+**Clear all secrets:**
+
+```powershell
+dotnet user-secrets clear
+```
 
 ## Running Tests
 
 From the test project directory:
+
 ```powershell
 dotnet test
 ```
 
 To run a specific test:
+
 ```powershell
 dotnet test --filter "FullyQualifiedName~SendChatMessageAsync_ReturnsValidResponse"
 ```
 
 To run with verbose output:
+
 ```powershell
 dotnet test --logger "console;verbosity=detailed"
 ```
@@ -54,3 +64,4 @@ dotnet test --logger "console;verbosity=detailed"
 - Some tests may create data on the server (conversations, annotations, files)
 - Ensure your API key has the necessary permissions
 - The tests assume a chat application is configured on the Dify instance
+- **User secrets are stored at:** `%APPDATA%\Microsoft\UserSecrets\dify-api-client-tests-12345\secrets.json`

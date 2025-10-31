@@ -1,4 +1,5 @@
 using DifyApiClient.Models;
+using Microsoft.Extensions.Configuration;
 using System.Text;
 using Xunit;
 
@@ -10,8 +11,13 @@ public class DifyApiClientTests : IDisposable
 
     public DifyApiClientTests()
     {
-        // Get API key from environment variable or use a default for testing
-        var apiKey = Environment.GetEnvironmentVariable("DIFY_API_KEY") ?? "app-your-api-key-here";
+        // Build configuration with user secrets support
+        var configuration = new ConfigurationBuilder()
+            .AddUserSecrets<DifyApiClientTests>()
+            .Build();
+
+        // Get API key from user secrets
+        var apiKey = configuration["DifyApiKey"] ?? "app-your-api-key-here";
         
         var options = new DifyApiClientOptions
         {
