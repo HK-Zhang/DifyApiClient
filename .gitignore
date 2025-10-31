@@ -10,3 +10,9 @@
 /tests/DifyApiClient.Tests/bin/Debug/net9.0
 /tests/DifyApiClient.Tests/obj
 .vs/**
+
+# NuGet packages
+nupkg/
+*.nupkg
+*.snupkg
+src/DifyApiClient/bin/**

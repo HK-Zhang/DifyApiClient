@@ -4,6 +4,36 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- NuGet Package Information -->
+    <PackageId>DifyApiClient</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>HK-Zhang</Authors>
+    <Company>HK-Zhang</Company>
+    <Description>A comprehensive .NET client library for the Dify Chat Application API. Supports chat operations (blocking &amp; streaming), file upload, conversation management, message feedback, audio operations, and more.</Description>
+    <PackageTags>dify;api;client;chat;ai;llm;assistant;dotnet</PackageTags>
+    <PackageProjectUrl>https://github.com/HK-Zhang/DifyApiClient</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/HK-Zhang/DifyApiClient</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Initial release with full Dify API support.</PackageReleaseNotes>
+    <Copyright>Copyright (c) 2025 HK-Zhang</Copyright>
+    
+    <!-- Build Settings -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
 
 </Project>
