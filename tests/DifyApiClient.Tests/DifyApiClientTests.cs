@@ -326,6 +326,7 @@ public class DifyApiClientTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
+        Assert.NotNull(result.Data);
         Assert.True(result.Data.Count <= 5, $"Expected max 5 messages, got {result.Data.Count}");
         _output.WriteLine($"Messages returned with limit=5: {result.Data.Count}");
     }
@@ -361,6 +362,7 @@ public class DifyApiClientTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
+        Assert.NotNull(result.Data);
         Assert.True(result.Data.Count <= 3, $"Expected max 3 conversations, got {result.Data.Count}");
         _output.WriteLine($"Conversations returned with limit=3: {result.Data.Count}");
     }
@@ -401,7 +403,7 @@ public class DifyApiClientTests : IDisposable
             var deletedConversation = conversations.Data?.FirstOrDefault(c => c.Id == conversationId);
             Assert.Null(deletedConversation);
         }
-        catch (HttpRequestException ex) when (ex.Message.Contains("415"))
+        catch (DifyApiException ex) when (ex.StatusCode == 415)
         {
             // Some Dify apps may have restrictions on deleting conversations
             _output.WriteLine($"Delete conversation returned 415: {ex.Message}");

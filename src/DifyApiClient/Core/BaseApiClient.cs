@@ -80,6 +80,7 @@ internal class BaseApiClient
         string url,
         CancellationToken cancellationToken = default)
     {
+        // Use simple DELETE - the API issue is actually on the server side
         var response = await HttpClient.DeleteAsync(url, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
     }
