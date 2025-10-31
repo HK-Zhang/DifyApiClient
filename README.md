@@ -1,5 +1,10 @@
 # Dify API Client
 
+[![Build and Test](https://github.com/HK-Zhang/DifyApiClient/actions/workflows/build-test.yml/badge.svg)](https://github.com/HK-Zhang/DifyApiClient/actions/workflows/build-test.yml)
+[![Publish to NuGet](https://github.com/HK-Zhang/DifyApiClient/actions/workflows/publish-nuget.yml/badge.svg)](https://github.com/HK-Zhang/DifyApiClient/actions/workflows/publish-nuget.yml)
+[![NuGet](https://img.shields.io/nuget/v/DifyApiClient.svg)](https://www.nuget.org/packages/DifyApiClient/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A comprehensive .NET client library for the [Dify](https://dify.ai/) Chat Application API.
 
 ## Features
@@ -28,7 +33,24 @@ A comprehensive .NET client library for the [Dify](https://dify.ai/) Chat Applic
 
 ## Installation
 
+### NuGet Package Manager
+
 ```bash
+dotnet add package DifyApiClient
+```
+
+Or via Package Manager Console in Visual Studio:
+
+```powershell
+Install-Package DifyApiClient
+```
+
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/HK-Zhang/DifyApiClient.git
+
 # Build the project
 dotnet build
 
