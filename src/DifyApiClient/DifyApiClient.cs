@@ -15,20 +15,22 @@ public class DifyApiClient : IDisposable
     private const string NullDeserializationError = "Response deserialization returned null";
     
     private readonly HttpClient _httpClient;
+    private readonly bool _disposeHttpClient;
     private readonly JsonSerializerOptions _jsonOptions;
     private bool _disposed;
 
     public DifyApiClient(DifyApiClientOptions options)
-        : this(options, new HttpClient())
+        : this(options, new HttpClient(), disposeHttpClient: true)
     {
     }
 
-    public DifyApiClient(DifyApiClientOptions options, HttpClient httpClient)
+    public DifyApiClient(DifyApiClientOptions options, HttpClient httpClient, bool disposeHttpClient = false)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(httpClient);
         
         _httpClient = httpClient;
+        _disposeHttpClient = disposeHttpClient;
 
         var baseUrl = options.BaseUrl.TrimEnd('/');
         _httpClient.BaseAddress = new Uri($"{baseUrl}/");
@@ -478,7 +480,7 @@ public class DifyApiClient : IDisposable
     {
         if (!_disposed)
         {
-            if (disposing)
+            if (disposing && _disposeHttpClient)
             {
                 _httpClient?.Dispose();
             }

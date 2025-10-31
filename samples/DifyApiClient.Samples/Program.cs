@@ -1,5 +1,6 @@
 using DifyApiClient;
 using DifyApiClient.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace DifyApiClient.Samples;
 
@@ -12,11 +13,16 @@ class Program
     {
         Console.WriteLine("=== Dify API Client Sample ===\n");
 
+        // Load configuration from user secrets
+        var configuration = new ConfigurationBuilder()
+            .AddUserSecrets<Program>()
+            .Build();
+
         // Configure the client
         var options = new DifyApiClientOptions
         {
-            BaseUrl = "http://osl4243/v1",
-            ApiKey = "your-api-key-here" // Replace with your actual API key
+            BaseUrl = configuration["DifyApi:BaseUrl"] ?? throw new InvalidOperationException("DifyApi:BaseUrl not found in user secrets"),
+            ApiKey = configuration["DifyApi:ApiKey"] ?? throw new InvalidOperationException("DifyApi:ApiKey not found in user secrets")
         };
 
         using var client = new DifyApiClient(options);
