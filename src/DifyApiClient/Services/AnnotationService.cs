@@ -17,7 +17,7 @@ internal class AnnotationService(HttpClient httpClient, JsonSerializerOptions js
     {
         return await GetAsync<AnnotationListResponse>(
             $"apps/annotations?page={page}&limit={limit}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task<Annotation> CreateAnnotationAsync(
@@ -27,7 +27,7 @@ internal class AnnotationService(HttpClient httpClient, JsonSerializerOptions js
         return await PostAsync<AnnotationRequest, Annotation>(
             "apps/annotations",
             request,
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task<Annotation> UpdateAnnotationAsync(
@@ -59,7 +59,7 @@ internal class AnnotationService(HttpClient httpClient, JsonSerializerOptions js
         return await PostAsync<AnnotationReplySettingsRequest, AnnotationReplyJobResponse>(
             $"apps/annotation-reply/{action}",
             request ?? new AnnotationReplySettingsRequest(),
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task<AnnotationReplyJobResponse> GetAnnotationReplyStatusAsync(
@@ -72,6 +72,6 @@ internal class AnnotationService(HttpClient httpClient, JsonSerializerOptions js
 
         return await GetAsync<AnnotationReplyJobResponse>(
             $"apps/annotation-reply/{action}/status/{jobId}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 }

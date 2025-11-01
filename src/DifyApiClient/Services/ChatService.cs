@@ -1,6 +1,8 @@
 using DifyApiClient.Core;
 using DifyApiClient.Models;
+using DifyApiClient.Telemetry;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
@@ -22,7 +24,7 @@ internal class ChatService(HttpClient httpClient, JsonSerializerOptions jsonOpti
         var result = await PostAsync<ChatMessageRequest, ChatCompletionResponse>(
             "chat-messages",
             request,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken: cancellationToken).ConfigureAwait(false);
         Logger.LogInformation("Chat message completed successfully");
         return result;
     }
@@ -31,6 +33,13 @@ internal class ChatService(HttpClient httpClient, JsonSerializerOptions jsonOpti
         ChatMessageRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        using var activity = DifyActivitySource.Instance.StartActivity("POST chat-messages (streaming)", ActivityKind.Client);
+        activity?.SetTag("http.method", "POST");
+        activity?.SetTag("http.url", "chat-messages");
+        activity?.SetTag("streaming", true);
+        
+        DifyMetrics.StreamingOperations.Add(1, new KeyValuePair<string, object?>("operation", "chat"));
+        
         Logger.LogInformation("Sending chat message in streaming mode");
         request.ResponseMode = "streaming";
 
@@ -64,10 +73,13 @@ internal class ChatService(HttpClient httpClient, JsonSerializerOptions jsonOpti
             if (chunk != null)
             {
                 chunkCount++;
+                DifyMetrics.StreamingChunks.Add(1, new KeyValuePair<string, object?>("operation", "chat"));
                 yield return chunk;
             }
         }
         
+        activity?.SetTag("chunk_count", chunkCount);
+        activity?.SetStatus(ActivityStatusCode.Ok);
         Logger.LogInformation("Streaming chat message completed, received {ChunkCount} chunks", chunkCount);
     }
 

@@ -1,5 +1,6 @@
 using DifyApiClient.Core;
 using DifyApiClient.Models;
+using DifyApiClient.Telemetry;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
@@ -17,6 +18,14 @@ internal class FileService(HttpClient httpClient, JsonSerializerOptions jsonOpti
         CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Uploading file: {FileName}", fileName);
+        
+        // Record file size metric
+        if (fileStream.CanSeek)
+        {
+            DifyMetrics.FileUploadSize.Record(fileStream.Length, 
+                new KeyValuePair<string, object?>("file_name", fileName));
+        }
+        
         using var content = new MultipartFormDataContent
         {
             { new StreamContent(fileStream), "file", fileName },
@@ -26,7 +35,7 @@ internal class FileService(HttpClient httpClient, JsonSerializerOptions jsonOpti
         var result = await PostAsync<FileUploadResponse>(
             "files/upload",
             content,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
         Logger.LogInformation("File uploaded successfully: {FileName}, ID: {FileId}", fileName, result.Id);
         return result;
     }

@@ -16,19 +16,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **XML Documentation Generation** - Enabled XML documentation file for better IntelliSense
 - **User-Agent Header** - Automatic User-Agent header with library name and version
 - **Deterministic Builds** - Enabled deterministic and CI builds for reproducibility
-- **Comprehensive Documentation** - Added DEPENDENCY_INJECTION.md and RESILIENCE.md guides
+- **Per-Request Timeout Override** - Support for custom timeout per request via CancellationToken
+- **OpenTelemetry Integration** - Full distributed tracing and metrics support
+  - ActivitySource for distributed tracing with detailed HTTP operation tracking
+  - Metrics API with counters and histograms (request count, duration, errors, active requests)
+  - Streaming operation and chunk tracking metrics
+  - File upload size metrics
+  - Extension methods for easy OpenTelemetry configuration
+- **Comprehensive Documentation** - Added DEPENDENCY_INJECTION.md, RESILIENCE.md, OPENTELEMETRY.md, and TIMEOUT_CONFIGURATION.md guides
 
 ### Changed
 - **Multi-Targeting** - Now targets .NET 8.0 and .NET 9.0 (was .NET 9.0 only)
-- **Package Dependencies** - Added Microsoft.Extensions.Http, Polly, and related packages
-- **README** - Updated with dependency injection quick start and new feature highlights
+- **Package Dependencies** - Added Microsoft.Extensions.Http, Polly, OpenTelemetry, and related packages
+- **BaseApiClient** - Enhanced with timeout support and OpenTelemetry instrumentation
+- **README** - Updated with dependency injection quick start, OpenTelemetry integration, and timeout configuration
 
 ### Technical Details
-- Added 7 high-priority production-ready features
-- Created 2 new comprehensive documentation files (1100+ lines)
+- Added 9 high-priority production-ready features (including OpenTelemetry and per-request timeout)
+- Created 4 new comprehensive documentation files (2600+ lines)
 - Zero breaking changes - fully backward compatible
 - All async methods now use ConfigureAwait(false)
-- Standard resilience policies: 3 retries with exponential backoff, circuit breaker after 5 failures 
+- Standard resilience policies: 3 retries with exponential backoff, circuit breaker after 5 failures
+- OpenTelemetry ActivitySource: "DifyApiClient"
+- OpenTelemetry Meter: "DifyApiClient" with 7 metrics
+- Per-request timeout implemented via CancellationTokenSource linking 
 
 ## [1.0.0] - 2025-10-31
 

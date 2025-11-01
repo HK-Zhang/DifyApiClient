@@ -27,7 +27,7 @@ internal class ConversationService(HttpClient httpClient, JsonSerializerOptions 
 
         return await GetAsync<MessageListResponse>(
             $"messages?{queryString}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task<ConversationListResponse> GetConversationsAsync(
@@ -46,7 +46,7 @@ internal class ConversationService(HttpClient httpClient, JsonSerializerOptions 
 
         return await GetAsync<ConversationListResponse>(
             $"conversations?{queryString}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task DeleteConversationAsync(
@@ -71,7 +71,7 @@ internal class ConversationService(HttpClient httpClient, JsonSerializerOptions 
         return await PostAsync<ConversationRenameRequest, Conversation>(
             $"conversations/{conversationId}/name",
             request,
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task<Dictionary<string, object>> GetConversationVariablesAsync(
@@ -85,6 +85,6 @@ internal class ConversationService(HttpClient httpClient, JsonSerializerOptions 
 
         return await GetAsync<Dictionary<string, object>>(
             $"conversations/{conversationId}/variables?{queryString}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 }

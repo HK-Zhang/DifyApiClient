@@ -17,6 +17,6 @@ internal class FeedbackService(HttpClient httpClient, JsonSerializerOptions json
     {
         return await GetAsync<FeedbackListResponse>(
             $"apps/feedbacks?page={page}&limit={limit}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 }

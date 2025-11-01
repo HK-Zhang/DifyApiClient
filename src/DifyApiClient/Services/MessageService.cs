@@ -33,6 +33,6 @@ internal class MessageService(HttpClient httpClient, JsonSerializerOptions jsonO
 
         return await GetAsync<SuggestedQuestionsResponse>(
             $"messages/{messageId}/suggested?{queryString}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 }
