@@ -9,13 +9,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of audio service
 /// </summary>
-internal class AudioService : BaseApiClient, IAudioService
+internal class AudioService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IAudioService
 {
-    public AudioService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<string> SpeechToTextAsync(
         Stream audioStream,
         string fileName,
@@ -23,16 +18,18 @@ internal class AudioService : BaseApiClient, IAudioService
         CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Converting speech to text from file: {FileName}", fileName);
-        using var content = new MultipartFormDataContent();
-        content.Add(new StreamContent(audioStream), "file", fileName);
-        content.Add(new StringContent(user), "user");
+        using var content = new MultipartFormDataContent
+        {
+            { new StreamContent(audioStream), "file", fileName },
+            { new StringContent(user), "user" }
+        };
 
-        var response = await HttpClient.PostAsync("audio-to-text", content, cancellationToken);
+        var response = await HttpClient.PostAsync("audio-to-text", content, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(
             JsonOptions,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
         var text = result?["text"] ?? string.Empty;
         Logger.LogInformation("Speech to text conversion completed, text length: {Length}", text.Length);
         return text;
@@ -43,9 +40,9 @@ internal class AudioService : BaseApiClient, IAudioService
         CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Converting text to audio");
-        var response = await HttpClient.PostAsJsonAsync("text-to-audio", request, JsonOptions, cancellationToken);
+        var response = await HttpClient.PostAsJsonAsync("text-to-audio", request, JsonOptions, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         Logger.LogInformation("Text to audio conversion completed");
         return stream;
     }

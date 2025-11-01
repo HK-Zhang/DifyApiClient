@@ -8,13 +8,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of annotation service
 /// </summary>
-internal class AnnotationService : BaseApiClient, IAnnotationService
+internal class AnnotationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IAnnotationService
 {
-    public AnnotationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<AnnotationListResponse> GetAnnotationsAsync(
         int page = 1,
         int limit = 20,
@@ -22,7 +17,7 @@ internal class AnnotationService : BaseApiClient, IAnnotationService
     {
         return await GetAsync<AnnotationListResponse>(
             $"apps/annotations?page={page}&limit={limit}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task<Annotation> CreateAnnotationAsync(
@@ -32,7 +27,7 @@ internal class AnnotationService : BaseApiClient, IAnnotationService
         return await PostAsync<AnnotationRequest, Annotation>(
             "apps/annotations",
             request,
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task<Annotation> UpdateAnnotationAsync(
@@ -64,7 +59,7 @@ internal class AnnotationService : BaseApiClient, IAnnotationService
         return await PostAsync<AnnotationReplySettingsRequest, AnnotationReplyJobResponse>(
             $"apps/annotation-reply/{action}",
             request ?? new AnnotationReplySettingsRequest(),
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task<AnnotationReplyJobResponse> GetAnnotationReplyStatusAsync(
@@ -77,6 +72,6 @@ internal class AnnotationService : BaseApiClient, IAnnotationService
 
         return await GetAsync<AnnotationReplyJobResponse>(
             $"apps/annotation-reply/{action}/status/{jobId}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 }

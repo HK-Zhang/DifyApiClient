@@ -14,6 +14,11 @@ Welcome! This index helps you navigate all the documentation for publishing Dify
 |----------|---------|-----------|
 | `SETUP_SUMMARY.md` | **Overview of everything configured** | First read - understand what's been set up |
 | `GITHUB_ACTIONS_SUMMARY.md` | GitHub Actions CI/CD details | Want to understand the automated workflow |
+| `DEPENDENCY_INJECTION.md` | IHttpClientFactory and DI setup | Setting up ASP.NET Core integration |
+| `RESILIENCE.md` | Retry policies and circuit breakers | Implementing fault tolerance |
+| `LOGGING.md` | Structured logging configuration | Setting up observability |
+| `OPENTELEMETRY.md` | Distributed tracing and metrics | Implementing OpenTelemetry |
+| `TIMEOUT_CONFIGURATION.md` | Global and per-request timeouts | Configuring timeout behavior |
 
 ### Publishing Guides
 

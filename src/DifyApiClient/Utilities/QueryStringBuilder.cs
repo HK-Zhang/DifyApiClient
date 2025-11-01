@@ -5,7 +5,7 @@ namespace DifyApiClient.Utilities;
 /// </summary>
 internal class QueryStringBuilder
 {
-    private readonly List<string> _parameters = new();
+    private readonly List<string> _parameters = [];
 
     public QueryStringBuilder Add(string key, string value)
     {

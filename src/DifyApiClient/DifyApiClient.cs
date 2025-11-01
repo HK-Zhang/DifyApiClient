@@ -12,20 +12,22 @@ namespace DifyApiClient;
 /// </summary>
 public class DifyApiClient : IDifyApiClient
 {
+    private const string UserAgentProduct = "DifyApiClient";
+    private const string UserAgentVersion = "1.0.0";
+    
     private readonly HttpClient _httpClient;
     private readonly bool _disposeHttpClient;
-    private readonly ILogger<DifyApiClient> _logger;
     private bool _disposed;
 
     // Feature-specific services
-    private readonly IChatService _chatService;
-    private readonly IConversationService _conversationService;
-    private readonly IFileService _fileService;
-    private readonly IMessageService _messageService;
-    private readonly IAudioService _audioService;
-    private readonly IApplicationService _applicationService;
-    private readonly IAnnotationService _annotationService;
-    private readonly IFeedbackService _feedbackService;
+    private readonly ChatService _chatService;
+    private readonly ConversationService _conversationService;
+    private readonly FileService _fileService;
+    private readonly MessageService _messageService;
+    private readonly AudioService _audioService;
+    private readonly ApplicationService _applicationService;
+    private readonly AnnotationService _annotationService;
+    private readonly FeedbackService _feedbackService;
 
     public DifyApiClient(DifyApiClientOptions options)
         : this(options, new HttpClient(), disposeHttpClient: true, logger: null)
@@ -41,18 +43,22 @@ public class DifyApiClient : IDifyApiClient
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(httpClient);
-        
+
         _httpClient = httpClient;
         _disposeHttpClient = disposeHttpClient;
-        _logger = logger ?? NullLogger<DifyApiClient>.Instance;
+        var effectiveLogger = logger ?? NullLogger<DifyApiClient>.Instance;
 
         var baseUrl = options.BaseUrl.TrimEnd('/');
         _httpClient.BaseAddress = new Uri($"{baseUrl}/");
         _httpClient.Timeout = options.Timeout;
         _httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", options.ApiKey);
+        
+        // Set User-Agent header for tracking
+        _httpClient.DefaultRequestHeaders.UserAgent.Clear();
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{UserAgentProduct}/{UserAgentVersion}");
 
-        _logger.LogInformation("DifyApiClient initialized with base URL: {BaseUrl}", baseUrl);
+        effectiveLogger.LogInformation("DifyApiClient initialized with base URL: {BaseUrl}", baseUrl);
 
         var jsonOptions = new JsonSerializerOptions
         {
@@ -61,14 +67,14 @@ public class DifyApiClient : IDifyApiClient
         };
 
         // Initialize services with logger
-        _chatService = new ChatService(_httpClient, jsonOptions, _logger);
-        _conversationService = new ConversationService(_httpClient, jsonOptions, _logger);
-        _fileService = new FileService(_httpClient, jsonOptions, _logger);
-        _messageService = new MessageService(_httpClient, jsonOptions, _logger);
-        _audioService = new AudioService(_httpClient, jsonOptions, _logger);
-        _applicationService = new ApplicationService(_httpClient, jsonOptions, _logger);
-        _annotationService = new AnnotationService(_httpClient, jsonOptions, _logger);
-        _feedbackService = new FeedbackService(_httpClient, jsonOptions, _logger);
+        _chatService = new ChatService(_httpClient, jsonOptions, effectiveLogger);
+        _conversationService = new ConversationService(_httpClient, jsonOptions, effectiveLogger);
+        _fileService = new FileService(_httpClient, jsonOptions, effectiveLogger);
+        _messageService = new MessageService(_httpClient, jsonOptions, effectiveLogger);
+        _audioService = new AudioService(_httpClient, jsonOptions, effectiveLogger);
+        _applicationService = new ApplicationService(_httpClient, jsonOptions, effectiveLogger);
+        _annotationService = new AnnotationService(_httpClient, jsonOptions, effectiveLogger);
+        _feedbackService = new FeedbackService(_httpClient, jsonOptions, effectiveLogger);
     }
 
     #region Chat Operations

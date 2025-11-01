@@ -9,13 +9,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of conversation service
 /// </summary>
-internal class ConversationService : BaseApiClient, IConversationService
+internal class ConversationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IConversationService
 {
-    public ConversationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<MessageListResponse> GetConversationMessagesAsync(
         string conversationId,
         string user,
@@ -32,7 +27,7 @@ internal class ConversationService : BaseApiClient, IConversationService
 
         return await GetAsync<MessageListResponse>(
             $"messages?{queryString}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task<ConversationListResponse> GetConversationsAsync(
@@ -51,7 +46,7 @@ internal class ConversationService : BaseApiClient, IConversationService
 
         return await GetAsync<ConversationListResponse>(
             $"conversations?{queryString}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task DeleteConversationAsync(
@@ -76,7 +71,7 @@ internal class ConversationService : BaseApiClient, IConversationService
         return await PostAsync<ConversationRenameRequest, Conversation>(
             $"conversations/{conversationId}/name",
             request,
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     public async Task<Dictionary<string, object>> GetConversationVariablesAsync(
@@ -90,6 +85,6 @@ internal class ConversationService : BaseApiClient, IConversationService
 
         return await GetAsync<Dictionary<string, object>>(
             $"conversations/{conversationId}/variables?{queryString}",
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 }

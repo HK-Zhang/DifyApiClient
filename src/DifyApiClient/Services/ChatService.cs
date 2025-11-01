@@ -1,6 +1,8 @@
 using DifyApiClient.Core;
 using DifyApiClient.Models;
+using DifyApiClient.Telemetry;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
@@ -11,13 +13,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of chat service
 /// </summary>
-internal class ChatService : BaseApiClient, IChatService
+internal class ChatService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IChatService
 {
-    public ChatService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<ChatCompletionResponse> SendChatMessageAsync(
         ChatMessageRequest request,
         CancellationToken cancellationToken = default)
@@ -27,7 +24,7 @@ internal class ChatService : BaseApiClient, IChatService
         var result = await PostAsync<ChatMessageRequest, ChatCompletionResponse>(
             "chat-messages",
             request,
-            cancellationToken);
+            cancellationToken: cancellationToken).ConfigureAwait(false);
         Logger.LogInformation("Chat message completed successfully");
         return result;
     }
@@ -36,6 +33,13 @@ internal class ChatService : BaseApiClient, IChatService
         ChatMessageRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        using var activity = DifyActivitySource.Instance.StartActivity("POST chat-messages (streaming)", ActivityKind.Client);
+        activity?.SetTag("http.method", "POST");
+        activity?.SetTag("http.url", "chat-messages");
+        activity?.SetTag("streaming", true);
+        
+        DifyMetrics.StreamingOperations.Add(1, new KeyValuePair<string, object?>("operation", "chat"));
+        
         Logger.LogInformation("Sending chat message in streaming mode");
         request.ResponseMode = "streaming";
 
@@ -48,16 +52,16 @@ internal class ChatService : BaseApiClient, IChatService
         using var response = await HttpClient.SendAsync(
             requestMessage,
             HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         using var reader = new StreamReader(stream);
 
         var chunkCount = 0;
         while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
         {
-            var line = await reader.ReadLineAsync(cancellationToken);
+            var line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:"))
                 continue;
 
@@ -69,10 +73,13 @@ internal class ChatService : BaseApiClient, IChatService
             if (chunk != null)
             {
                 chunkCount++;
+                DifyMetrics.StreamingChunks.Add(1, new KeyValuePair<string, object?>("operation", "chat"));
                 yield return chunk;
             }
         }
         
+        activity?.SetTag("chunk_count", chunkCount);
+        activity?.SetStatus(ActivityStatusCode.Ok);
         Logger.LogInformation("Streaming chat message completed, received {ChunkCount} chunks", chunkCount);
     }
 
@@ -83,7 +90,7 @@ internal class ChatService : BaseApiClient, IChatService
     {
         Logger.LogInformation("Stopping chat message generation for task {TaskId}", taskId);
         var request = new { user };
-        await PostAsync($"chat-messages/{taskId}/stop", request, cancellationToken);
+        await PostAsync($"chat-messages/{taskId}/stop", request, cancellationToken).ConfigureAwait(false);
         Logger.LogInformation("Chat message generation stopped for task {TaskId}", taskId);
     }
 }

@@ -20,23 +20,53 @@ A comprehensive .NET client library for the [Dify](https://dify.ai/) Chat Applic
 - Feedbacks retrieval
 
 ✅ **Modern C# Implementation**
-- Async/await pattern
+- Async/await pattern with ConfigureAwait(false)
 - IAsyncEnumerable for streaming
 - Nullable reference types
 - Strong typing with models
 
 ✅ **Production Ready**
-- Proper error handling
+- Proper error handling with DifyApiException
 - Cancellation token support
 - IDisposable implementation
 - Comprehensive unit tests
 - **Built-in logging support** (Microsoft.Extensions.Logging)
+- **ConfigureAwait(false)** on all async calls (prevents deadlocks)
+- **Per-request timeout override** (fine-grained timeout control)
 
 ✅ **Observability**
+- **OpenTelemetry integration** (distributed tracing & metrics)
+- Activity tracking for all HTTP operations
+- Metrics for request count, duration, errors, and active requests
+- Streaming operation and chunk metrics
+- File upload size tracking
 - Structured logging for all operations
 - HTTP request/response logging
 - Error logging with detailed context
 - Optional and backward compatible
+
+✅ **Dependency Injection**
+- **IHttpClientFactory integration** (prevents socket exhaustion)
+- Extension methods for easy DI setup
+- Scoped/Transient lifetime support
+- Compatible with ASP.NET Core
+
+✅ **Resilience & Reliability**
+- **Polly integration** for retry policies
+- Circuit breaker pattern
+- Exponential backoff
+- Transient fault handling
+- Rate limit handling (429 responses)
+
+✅ **Multi-Targeting**
+- .NET 8.0
+- .NET 9.0
+
+✅ **Quality**
+- XML documentation
+- Deterministic builds
+- Source Link support
+- Strong typing
 
 ## Installation
 
@@ -67,6 +97,8 @@ dotnet test
 
 ## Quick Start
 
+### Basic Usage
+
 ```csharp
 using DifyApiClient;
 using DifyApiClient.Models;
@@ -91,8 +123,52 @@ var response = await client.SendChatMessageAsync(request);
 Console.WriteLine(response.Answer);
 ```
 
+### With Dependency Injection (Recommended)
+
+```csharp
+using DifyApiClient.Extensions;
+
+// In Program.cs or Startup.cs
+builder.Services.AddDifyApiClientWithResilience(options =>
+{
+    options.BaseUrl = builder.Configuration["Dify:BaseUrl"]!;
+    options.ApiKey = builder.Configuration["Dify:ApiKey"]!;
+});
+
+// In your service or controller
+public class ChatService
+{
+    private readonly IDifyApiClient _difyClient;
+    
+    public ChatService(IDifyApiClient difyClient)
+    {
+        _difyClient = difyClient;
+    }
+    
+    public async Task<string> SendMessage(string message)
+    {
+        var response = await _difyClient.SendChatMessageAsync(new ChatMessageRequest
+        {
+            Query = message,
+            User = "user-123"
+        });
+        return response.Answer;
+    }
+}
+```
+
+**Benefits of DI approach:**
+- ✅ Uses IHttpClientFactory (prevents socket exhaustion)
+- ✅ Automatic retry and circuit breaker policies
+- ✅ Built-in logging
+- ✅ Easier testing
+
 ## Documentation
 
+- [OpenTelemetry Guide](docs/OPENTELEMETRY.md) - Distributed tracing and metrics instrumentation
+- [Timeout Configuration](docs/TIMEOUT_CONFIGURATION.md) - Global and per-request timeout configuration
+- [Dependency Injection Guide](docs/DEPENDENCY_INJECTION.md) - Complete DI setup with IHttpClientFactory
+- [Resilience Guide](docs/RESILIENCE.md) - Retry policies, circuit breakers, and fault handling
 - [Logging Guide](docs/LOGGING.md) - Comprehensive logging documentation
 - [Changelog](docs/CHANGELOG.md) - Version history and release notes
 - [Setup Summary](docs/SETUP_SUMMARY.md) - Project setup information
@@ -170,6 +246,76 @@ var response = await client.SendChatMessageAsync(request);
 ```
 
 **See [LOGGING.md](docs/LOGGING.md) for detailed logging documentation.**
+
+### OpenTelemetry Integration
+
+DifyApiClient includes built-in OpenTelemetry support for distributed tracing and metrics:
+
+```csharp
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
+using DifyApiClient.Extensions;
+
+// In Program.cs
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracerBuilder =>
+    {
+        tracerBuilder
+            .AddDifyApiClientInstrumentation()
+            .AddConsoleExporter();
+    })
+    .WithMetrics(meterBuilder =>
+    {
+        meterBuilder
+            .AddDifyApiClientInstrumentation()
+            .AddConsoleExporter();
+    });
+```
+
+**Available Metrics:**
+- `difyapiclient.requests.count` - Total request count
+- `difyapiclient.requests.duration` - Request duration (ms)
+- `difyapiclient.requests.errors` - Failed requests
+- `difyapiclient.requests.active` - Concurrent requests
+- `difyapiclient.streaming.operations` - Streaming operations
+- `difyapiclient.streaming.chunks` - Chunks received
+- `difyapiclient.files.upload_size` - File upload sizes (bytes)
+
+**See [OPENTELEMETRY.md](docs/OPENTELEMETRY.md) for complete documentation.**
+
+### Per-Request Timeout Override
+
+Configure different timeouts for different operations:
+
+```csharp
+using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+// Quick operation - 30 second timeout
+var response = await client.SendChatMessageAsync(request, cts.Token);
+```
+
+Or extend the client with timeout parameters:
+
+```csharp
+public static async Task<ChatCompletionResponse> SendChatMessageWithTimeoutAsync(
+    this IDifyApiClient client,
+    ChatMessageRequest request,
+    TimeSpan timeout,
+    CancellationToken cancellationToken = default)
+{
+    using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+    cts.CancelAfter(timeout);
+    
+    return await client.SendChatMessageAsync(request, cts.Token);
+}
+
+// Usage
+var response = await client.SendChatMessageWithTimeoutAsync(
+    request, 
+    TimeSpan.FromSeconds(15));
+```
+
+**See [TIMEOUT_CONFIGURATION.md](docs/TIMEOUT_CONFIGURATION.md) for detailed timeout configuration.**
 
 ### Conversation Management
 
