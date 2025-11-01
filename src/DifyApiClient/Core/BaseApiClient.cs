@@ -9,20 +9,13 @@ namespace DifyApiClient.Core;
 /// <summary>
 /// Base class for API client operations with common HTTP patterns
 /// </summary>
-internal class BaseApiClient
+internal class BaseApiClient(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
 {
-    protected readonly HttpClient HttpClient;
-    protected readonly JsonSerializerOptions JsonOptions;
-    protected readonly ILogger Logger;
+    protected readonly HttpClient HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+    protected readonly JsonSerializerOptions JsonOptions = jsonOptions ?? throw new ArgumentNullException(nameof(jsonOptions));
+    protected readonly ILogger Logger = logger ?? NullLogger.Instance;
 
     private const string NullDeserializationError = "Response deserialization returned null";
-
-    public BaseApiClient(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-    {
-        HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        JsonOptions = jsonOptions ?? throw new ArgumentNullException(nameof(jsonOptions));
-        Logger = logger ?? NullLogger.Instance;
-    }
 
     protected async Task<TResponse> GetAsync<TResponse>(
         string url,

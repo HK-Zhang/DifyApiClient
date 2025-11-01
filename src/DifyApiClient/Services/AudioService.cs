@@ -9,13 +9,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of audio service
 /// </summary>
-internal class AudioService : BaseApiClient, IAudioService
+internal class AudioService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IAudioService
 {
-    public AudioService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<string> SpeechToTextAsync(
         Stream audioStream,
         string fileName,
@@ -23,9 +18,11 @@ internal class AudioService : BaseApiClient, IAudioService
         CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Converting speech to text from file: {FileName}", fileName);
-        using var content = new MultipartFormDataContent();
-        content.Add(new StreamContent(audioStream), "file", fileName);
-        content.Add(new StringContent(user), "user");
+        using var content = new MultipartFormDataContent
+        {
+            { new StreamContent(audioStream), "file", fileName },
+            { new StringContent(user), "user" }
+        };
 
         var response = await HttpClient.PostAsync("audio-to-text", content, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();

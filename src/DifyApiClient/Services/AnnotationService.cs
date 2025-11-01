@@ -8,13 +8,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of annotation service
 /// </summary>
-internal class AnnotationService : BaseApiClient, IAnnotationService
+internal class AnnotationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IAnnotationService
 {
-    public AnnotationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<AnnotationListResponse> GetAnnotationsAsync(
         int page = 1,
         int limit = 20,

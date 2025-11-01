@@ -8,13 +8,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of application service
 /// </summary>
-internal class ApplicationService : BaseApiClient, IApplicationService
+internal class ApplicationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IApplicationService
 {
-    public ApplicationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<ApplicationInfo> GetApplicationInfoAsync(
         CancellationToken cancellationToken = default)
     {

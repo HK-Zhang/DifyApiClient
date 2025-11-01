@@ -8,13 +8,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of feedback service
 /// </summary>
-internal class FeedbackService : BaseApiClient, IFeedbackService
+internal class FeedbackService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IFeedbackService
 {
-    public FeedbackService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<FeedbackListResponse> GetFeedbacksAsync(
         int page = 1,
         int limit = 20,

@@ -11,13 +11,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of chat service
 /// </summary>
-internal class ChatService : BaseApiClient, IChatService
+internal class ChatService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IChatService
 {
-    public ChatService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<ChatCompletionResponse> SendChatMessageAsync(
         ChatMessageRequest request,
         CancellationToken cancellationToken = default)

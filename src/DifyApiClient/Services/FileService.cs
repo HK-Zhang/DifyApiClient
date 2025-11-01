@@ -8,13 +8,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of file service
 /// </summary>
-internal class FileService : BaseApiClient, IFileService
+internal class FileService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IFileService
 {
-    public FileService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<FileUploadResponse> UploadFileAsync(
         Stream fileStream,
         string fileName,
@@ -22,9 +17,11 @@ internal class FileService : BaseApiClient, IFileService
         CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Uploading file: {FileName}", fileName);
-        using var content = new MultipartFormDataContent();
-        content.Add(new StreamContent(fileStream), "file", fileName);
-        content.Add(new StringContent(user), "user");
+        using var content = new MultipartFormDataContent
+        {
+            { new StreamContent(fileStream), "file", fileName },
+            { new StringContent(user), "user" }
+        };
 
         var result = await PostAsync<FileUploadResponse>(
             "files/upload",

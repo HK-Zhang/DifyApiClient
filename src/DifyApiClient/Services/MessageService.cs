@@ -9,13 +9,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of message service
 /// </summary>
-internal class MessageService : BaseApiClient, IMessageService
+internal class MessageService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IMessageService
 {
-    public MessageService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task SubmitMessageFeedbackAsync(
         string messageId,
         MessageFeedbackRequest request,

@@ -9,13 +9,8 @@ namespace DifyApiClient.Services;
 /// <summary>
 /// Implementation of conversation service
 /// </summary>
-internal class ConversationService : BaseApiClient, IConversationService
+internal class ConversationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null) : BaseApiClient(httpClient, jsonOptions, logger), IConversationService
 {
-    public ConversationService(HttpClient httpClient, JsonSerializerOptions jsonOptions, ILogger? logger = null)
-        : base(httpClient, jsonOptions, logger)
-    {
-    }
-
     public async Task<MessageListResponse> GetConversationMessagesAsync(
         string conversationId,
         string user,

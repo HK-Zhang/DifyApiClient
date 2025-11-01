@@ -23,7 +23,7 @@ public static class ServiceCollectionExtensions
 
         var options = new DifyApiClientOptions
         {
-            BaseUrl = "https://api.dify.ai/v1",
+            BaseUrl = "placeholder",
             ApiKey = "placeholder"
         };
         configure(options);
