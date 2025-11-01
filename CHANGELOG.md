@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Package Dependencies** - Added Microsoft.Extensions.Http, Polly, OpenTelemetry, and related packages
 - **BaseApiClient** - Enhanced with timeout support and OpenTelemetry instrumentation
 - **README** - Updated with dependency injection quick start, OpenTelemetry integration, and timeout configuration
+- **CHANGELOG.md** - Moved from docs/ to root directory for better visibility
 
 ### Technical Details
 - Added 9 high-priority production-ready features (including OpenTelemetry and per-request timeout)
